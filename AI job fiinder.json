@@ -1,0 +1,563 @@
+{
+  "name": "AI job fiinder",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a2b4e59a-21c8-4c12-9469-033c9817337e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://api.adzuna.com/v1/api/jobs/in/search/1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "app_id",
+              "value": "[your_app_id]"
+            },
+            {
+              "name": "app_key",
+              "value": "[your_app_key]"
+            },
+            {
+              "name": "results_per_page",
+              "value": "20"
+            },
+            {
+              "name": "what",
+              "value": "Software Developer"
+            },
+            {
+              "name": "where",
+              "value": "Gujarat"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d402e85d-1efe-4229-9219-37dfd3ec11bf",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst response = $input.first().json;\n\nconst jobs = response.results || [];\n\nreturn jobs.map(job => ({\n  json: {\n    job_title: job.title || \"Not specified\",\n    company: job.company?.display_name || \"Not specified\",\n    location: job.location?.display_name || \"Not specified\",\n    salary_min: job.salary_min || null,\n    salary_max: job.salary_max || null,\n    description: job.description || \"\",\n    job_url: job.redirect_url || \"\",\n    created: job.created || \"\",\n    category: job.category?.label || \"\"\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "664e2aa9-fea7-4819-8e34-79c4570f3e3c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "job_url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "ea155f07-f69f-4efa-843b-dfccf6f2e518",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "2835c24a-4642-4fca-9fd3-31c44e550a2f",
+              "leftValue": "={{ $json.job_title }}",
+              "rightValue": "Developer",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "c95d0df5-ffe5-4670-bb46-665f0d6f55cc",
+              "leftValue": "={{ $json.job_title }}",
+              "rightValue": "\tPython",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "8c384c1b-9a5b-42be-b715-86fe35501045",
+              "leftValue": "={{ $json.job_title }}",
+              "rightValue": "AI Engineer",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "ee7030df-c4a8-4557-b279-639c7f95dd27",
+              "leftValue": "={{ $json.job_title }}",
+              "rightValue": "Software",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        0
+      ],
+      "id": "e2c06a14-f77b-436f-bfd2-7a600b2795ec",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "dd2436de-4922-4c29-84d6-a4c62851435b",
+              "leftValue": "={{ $json.location }}",
+              "rightValue": "Vadodara",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        -96
+      ],
+      "id": "43575d70-7444-4a6a-bf5c-fc441fc95ae5",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\nYou are an expert AI recruitment assistant.\n\nEvaluate the following job listing for a fresher BTech Computer Science candidate.\n\nCANDIDATE PROFILE:\n- Education: BTech Computer Science\n- Experience: Fresher / 0 years\n- Technical skills: Python, Java, JavaScript, React, HTML, CSS, FastAPI, SQL, LangChain, RAG, Generative AI, AI Agents, Machine Learning.\n- Preferred roles: AI Engineer, Python Developer, Software Developer, AI Automation Engineer, Graduate Engineer Trainee.\n- Preferred location: Vadodara, Gujarat, India.\n\nJOB LISTING:\nTitle: {{ $json.job_title }}\nCompany: {{ $json.company }}\nLocation: {{ $json.location }}\nDescription: {{ $json.description }}\n\nTASK:\n1. Evaluate how relevant this job is to the candidate.\n2. Check whether a fresher can realistically apply.\n3. Compare the required skills with the candidate's skills.\n4. Identify any experience requirements or location mismatches.\n5. Give a match score from 0 to 100.\n\nReturn your answer in this exact format:\n\nMATCH_SCORE: [number]\nFRESHER_ELIGIBLE: [YES/NO/UNCERTAIN]\nRELEVANT_SKILLS: [comma-separated skills]\nMISSING_SKILLS: [comma-separated skills]\nREASON: [brief explanation]\nRECOMMENDATION: [APPLY/SKIP/REVIEW]\n",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        -192
+      ],
+      "id": "0a0585fa-d919-454d-982f-8e0945989911",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        16
+      ],
+      "id": "",
+      "name": "Google Gemini Chat Model",
+      
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst evaluations = $input.all();\nconst originalJobs = $('If1').all();\n\nreturn evaluations.map((item, index) => {\n  const text = item.json.text || \"\";\n  const job = originalJobs[index]?.json || {};\n\n  const score = Number(\n    text.match(/MATCH_SCORE:\\s*(\\d+)/i)?.[1] || 0\n  );\n\n  const eligibility =\n    text.match(/FRESHER_ELIGIBLE:\\s*(YES|NO|UNCERTAIN)/i)?.[1]\n    || \"UNCERTAIN\";\n\n  const relevant =\n    text.match(/RELEVANT_SKILLS:\\s*([\\s\\S]*?)(?=\\\\n|\\\\r|\\n|$)/i)?.[1]?.trim()\n    || \"\";\n\n  const missing =\n    text.match(/MISSING_SKILLS:\\s*([\\s\\S]*?)(?=\\\\n|\\\\r|\\n|$)/i)?.[1]?.trim()\n    || \"\";\n\n  const reason =\n    text.match(/REASON:\\s*([\\s\\S]*?)(?=\\\\n\\s*RECOMMENDATION:|\\n\\s*RECOMMENDATION:|$)/i)?.[1]?.trim()\n    || \"\";\n\n  const recommendation =\n    text.match(/RECOMMENDATION:\\s*(APPLY|SKIP|REVIEW)/i)?.[1]\n    || \"REVIEW\";\n\n  return {\n    json: {\n      job_title: job.job_title || \"\",\n      company: job.company || \"\",\n      location: job.location || \"\",\n      salary_min: job.salary_min ?? \"\",\n      salary_max: job.salary_max ?? \"\",\n      match_score: score,\n      fresher_eligible: eligibility,\n      relevant_skills: relevant,\n      missing_skills: missing,\n      reason: reason,\n      recommendation: recommendation,\n      job_url: job.job_url || \"\"\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        -192
+      ],
+      "id": "",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI JOB FINDER",
+          "cachedResultUrl": "YOUR_GOOGLE_SHEET_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "jobs",
+          "cachedResultUrl": ""
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Job Title": "={{ $json.job_title }}",
+            "Comapny": "=\t{{ $json.company }}",
+            "Location ": "={{ $json.location }}",
+            "Salary": "={{    $json.salary_min && $json.salary_max     ? $json.salary_min + \" - \" + $json.salary_max     : \"Not disclosed\" }}",
+            "Match Score": "={{ $json.match_score }}",
+            "Fresher Eligible": "=\t{{ $json.fresher_eligible }}",
+            "Relevant Skills": "={{ $json.relevant_skills }}",
+            "Missing Skills": "={{ $json.missing_skills }}",
+            "Recommendation": "={{ $json.recommendation }}",
+            "AI reason": "={{ $json.reason }}",
+            "Job URL": "={{ $json.job_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Comapny",
+              "displayName": "Comapny",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location ",
+              "displayName": "Location ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Match Score",
+              "displayName": "Match Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fresher Eligible",
+              "displayName": "Fresher Eligible",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Relevant Skills",
+              "displayName": "Relevant Skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Missing Skills",
+              "displayName": "Missing Skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AI reason",
+              "displayName": "AI reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2160,
+        -224
+      ],
+      "id": "4bae3f4f-95e1-4324-a73a-b2d2c4ca426d",
+      "name": "Append row in sheet",
+      
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -80,
+        -224
+      ],
+      "id": "de2793a5-a371-47c4-9968-7a7119af274b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "",
+        "subject": "=New Job Alert: {{$json[\"Job Title\"]}} at {{$json[\"Company\"]}}",
+        "message": "=<h2>🎯 New Job Match Found!</h2>  <p><b>Job Title:</b> {{$json[\"Job Title\"]}}</p> <p><b>Company:</b> {{$json[\"Company\"]}}</p> <p><b>Location:</b> {{$json[\"Location\"]}}</p> <p><b>Salary:</b> {{$json[\"Salary\"]}}</p>  <hr>  <h3>AI Evaluation</h3> <p><b>Match Score:</b> {{$json[\"Match Score\"]}}/100</p> <p><b>Fresher Eligibility:</b> {{$json[\"Fresher Eligible\"]}}</p> <p><b>Relevant Skills:</b> {{$json[\"Relevant Skills\"]}}</p> <p><b>Missing Skills:</b> {{$json[\"Missing Skills\"]}}</p> <p><b>Recommendation:</b> {{$json[\"Recommendation\"]}}</p> <p><b>AI Reason:</b> {{$json[\"AI reason\"]}}</p>  <p><a href=\"{{$json['Job URL']}}\">Apply for this Job</a></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2384,
+        -224
+      ],
+      "id": "bbab9da9-a39a-4538-b6eb-5b0369f604d1",
+      "name": "Send a message",
+      
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "6bfccfa3-7f66-4d62-8a47-ec314330ff86",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    
+  },
+  "nodeGroups": [],
+  
+  "tags": []
+}
